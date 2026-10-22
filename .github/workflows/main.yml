@@ -27,14 +27,13 @@ jobs:
         id: project
         shell: bash
         run: |
-          if [[ -f "settings.gradle.kts" ]]; then
-            echo "directory=." >> "$GITHUB_OUTPUT"
-          elif [[ -f "sorsproj/settings.gradle.kts" ]]; then
-            echo "directory=sorsproj" >> "$GITHUB_OUTPUT"
-          else
-            echo "::error::Could not find settings.gradle.kts at the repository root or in sorsproj/"
+          settings_file=$(find . -type f -name settings.gradle.kts -not -path '*/.gradle/*' -print -quit)
+          if [[ -z "$settings_file" ]]; then
+            echo "::error::Could not find settings.gradle.kts anywhere in the repository"
             exit 1
           fi
+          project_directory=$(dirname "$settings_file")
+          echo "directory=${project_directory#./}" >> "$GITHUB_OUTPUT"
       - name: Build debug APK
         run: gradle --no-daemon -p "${{ steps.project.outputs.directory }}" assembleDebug
       - name: Upload APK
